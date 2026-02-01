@@ -1,0 +1,47 @@
+name: "AI Code Review"
+description: "Runs AI-powered code review on pull requests"
+author: "Tuan Tran"
+
+inputs:
+  openai_api_key:
+    description: "OpenAI API key"
+    required: true
+  github_token:
+    description: "GitHub token (usually github.token)"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      shell: bash
+      run: |
+        pip install openai
+
+    - name: Run AI Code Review
+      shell: bash
+      env:
+        OPENAI_API_KEY: ${{ inputs.openai_api_key }}
+        GH_TOKEN: ${{ inputs.github_token }}
+      run: |
+        python scripts/ai_code_review.py
+
+    - name: Submit inline review comments
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github_token }}
+      run: |
+        PR_NUMBER="${{ github.event.pull_request.number }}"
+        curl -X POST \
+          -H "Authorization: Bearer $GH_TOKEN" \
+          -H "Accept: application/vnd.github+json" \
+          https://api.github.com/repos/${{ github.repository }}/pulls/$PR_NUMBER/reviews \
+          -d @review_output.json
