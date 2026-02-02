@@ -76,16 +76,12 @@ def get_diff_positions(file_path):
     with open(event_path, "r", encoding="utf-8") as f:
         event = json.load(f)
         pr_number = event["number"]
+        repo = os.getenv("GITHUB_REPOSITORY")
 
-        file_path = str(pathlib.Path(file_path).as_posix()).lstrip("./")
         cmd = [
-            "gh",
-            "pr",
-            "diff",
-            str(pr_number),
-            "--patch",
-            "--path",
-            file_path
+            "gh", "api",
+            f"repos/{repo}/pulls/{pr_number}/files",
+            "--jq", ".[] | {filename: .filename, patch: .patch}"
         ]
         result = subprocess.run(cmd, capture_output=True, text=True)
         if result.returncode != 0:
