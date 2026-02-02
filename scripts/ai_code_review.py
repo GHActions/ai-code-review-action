@@ -88,43 +88,48 @@ def get_diff_positions(file_path):
             logging.error(f"Error calling gh api: {result.stderr}")
             return {}
 
-        files = json.loads(result.stdout)
+    files = []
+    for line in result.stdout.splitlines():
+        try:
+            files.append(json.loads(line))
+        except json.JSONDecodeError:
+            continue
 
-        # Find the file we care about
-        patch = None
-        for f in files:
-            if f["filename"] == file_path:
-                patch = f.get("patch")
-                break
+    # Find the file we care about
+    patch = None
+    for f in files:
+        if f["filename"] == file_path:
+            patch = f.get("patch")
+            break
 
-        if not patch:
-            logging.warning(f"No patch found for {file_path}")
-            return {}
+    if not patch:
+        logging.warning(f"No patch found for {file_path}")
+        return {}
 
-        diff = patch.splitlines()
+    diff = patch.splitlines()
 
-        positions = {}
-        file_line = 0
-        diff_pos = 0
+    positions = {}
+    file_line = 0
+    diff_pos = 0
 
-        for line in diff:
-            diff_pos += 1
+    for line in diff:
+        diff_pos += 1
 
-            if line.startswith("@@"):
-                hunk = line.split(" ")[2]  # "+12,5"
-                start = int(hunk.split(",")[0].replace("+", ""))
-                file_line = start - 1
-                continue
+        if line.startswith("@@"):
+            hunk = line.split(" ")[2]  # "+12,5"
+            start = int(hunk.split(",")[0].replace("+", ""))
+            file_line = start - 1
+            continue
 
-            if line.startswith("+") and not line.startswith("+++"):
-                file_line += 1
-                positions[file_line] = diff_pos
-            elif line.startswith("-") and not line.startswith("---"):
-                continue
-            else:
-                file_line += 1
+        if line.startswith("+") and not line.startswith("+++"):
+            file_line += 1
+            positions[file_line] = diff_pos
+        elif line.startswith("-") and not line.startswith("---"):
+            continue
+        else:
+            file_line += 1
 
-        return positions
+    return positions
 
 
 def review_file(path):
