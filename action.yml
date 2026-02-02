@@ -13,29 +13,47 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Checkout repository
+    # 1. Checkout the ACTION code (your repo)
+    - name: Checkout action code
       uses: actions/checkout@v4
+      with:
+        repository: GHActions/ai-code-review-action
+        path: action
 
+    # 2. Checkout the CALLER repo (the PR code)
+    - name: Checkout target repository
+      uses: actions/checkout@v4
+      with:
+        path: repo
+
+    # 3. Setup Python
     - name: Setup Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.12'
 
+    # 4. Install dependencies
     - name: Install dependencies
       shell: bash
       run: |
         pip install openai
 
+    # 5. Run AI Code Review
     - name: Run AI Code Review
       shell: bash
+      working-directory: repo
       env:
         OPENAI_API_KEY: ${{ inputs.openai_api_key }}
         GH_TOKEN: ${{ inputs.github_token }}
+        GITHUB_EVENT_PATH: ${{ github.event_path }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
       run: |
-        python scripts/ai_code_review.py
+        python ../action/scripts/ai_code_review.py
 
+    # 6. Submit inline review comments
     - name: Submit inline review comments
       shell: bash
+      working-directory: repo
       env:
         GH_TOKEN: ${{ inputs.github_token }}
       run: |
