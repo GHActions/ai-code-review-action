@@ -189,6 +189,10 @@ FILE CONTENT WITH LINE NUMBERS:
     )
 
     ai_text = response.choices[0].message.content
+    print("*********************")
+    print("AI RESPONSE:")
+    print(ai_text)
+    print("*********************")
 
     try:
         data = json.loads(ai_text)
