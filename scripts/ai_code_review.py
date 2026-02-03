@@ -145,28 +145,41 @@ def review_file(path):
         logging.error(f"Could not read {path}: {e}")
         return []
 
+    lines = content.splitlines()
+    numbered_content = "\n".join(
+        f"{i+1}: {line}"
+        for i, line in enumerate(lines)
+    )
+
     prompt = f"""
-    You are an expert software engineer. Review the following file.
+You are an expert software engineer. Review the following file.
 
-    Return ONLY valid JSON in this exact format:
+Each line is prefixed with its 1-based line number, like:
+1: import os
+2: def foo():
+3:     return 1
 
-    [
-    {{"line": <line_number>, "comment": "<text>"}},
-    ...
-    ]
+Return ONLY valid JSON in this exact format:
 
-    Rules:
-    - Only include lines that have issues.
-    - Use absolute line numbers from the file.
-    - Do not include explanations outside the JSON.
-    - Do not include markdown.
-    - Do not include headings.
-    - Do not include prose.
-    - Do not wrap the JSON in code fences.
+[
+  {{"line": <line_number>, "comment": "<text>"}},
+  ...
+]
 
-    FILE PATH: {path}
-    FILE CONTENT:
-    {content}
+Rules:
+- Use the exact line numbers shown before each line
+    (the numbers before the colon).
+- Only include lines that have issues.
+- Do not invent or guess line numbers.
+- Do not include explanations outside the JSON.
+- Do not include markdown.
+- Do not include headings.
+- Do not include prose.
+- Do not wrap the JSON in code fences.
+
+FILE PATH: {path}
+FILE CONTENT WITH LINE NUMBERS:
+{numbered_content}
     """
 
     response = client.chat.completions.create(
