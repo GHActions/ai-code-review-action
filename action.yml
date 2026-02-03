@@ -36,6 +36,7 @@ runs:
     - name: Install dependencies
       shell: bash
       run: |
+        pip install --upgrade pip
         pip install openai
 
     # 5. Run AI Code Review
