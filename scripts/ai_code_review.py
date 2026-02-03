@@ -84,10 +84,6 @@ def get_diff_positions(file_path):
             "--jq", ".[] | {filename: .filename, patch: .patch}"
         ]
         result = subprocess.run(cmd, capture_output=True, text=True)
-        print("*********************")
-        print("GH API CALL RESULT:")
-        print(result.stdout)
-        print("*********************")
         if result.returncode != 0:
             logging.error(f"Error calling gh api: {result.stderr}")
             return {}
@@ -102,7 +98,14 @@ def get_diff_positions(file_path):
     # Find the file we care about
     patch = None
     for f in files:
-        if f["filename"] == file_path:
+        api_name = f["filename"].lstrip("./")
+        local_name = file_path.lstrip("./")
+
+        # strip leading "repo/" if present
+        if local_name.startswith("repo/"):
+            local_name = local_name[len("repo/"):]
+
+        if api_name == local_name:
             patch = f.get("patch")
             break
 
